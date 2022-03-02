@@ -39,10 +39,6 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mut camera = PerspectiveCameraBundle::new_3d();
-    camera.transform.translation = Vec3::new(0.0, 0.0, 100.0);
-    commands.spawn_bundle(camera);
-
     let texture_handle: Handle<Image> = asset_server.load("cloud.png");
 
     let mut gradient = Gradient::new();
@@ -56,12 +52,14 @@ fn setup(
             name: "Gradient".to_string(),
             capacity: 32768,
             spawner: Spawner::new(SpawnMode::Rate(Value::Single(1000.))),
+            init_layout: Default::default(),
             render_layout: Default::default(),
+            update_layout: Default::default(),
         }
-        .with(ParticleTextureModifier {
+        .render(ParticleTextureModifier {
             texture: texture_handle.clone(),
         })
-        .with(ColorOverLifetimeModifier { gradient }),
+        .render(ColorOverLifetimeModifier { gradient }),
     );
 
     commands

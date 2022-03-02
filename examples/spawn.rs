@@ -33,37 +33,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn setup(
     mut commands: Commands,
     mut effects: ResMut<Assets<EffectAsset>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mut camera = PerspectiveCameraBundle::new_3d();
-    camera.transform.translation = Vec3::new(0.0, 0.0, 100.0);
+    let mut camera = OrthographicCameraBundle::new_2d();
     commands.spawn_bundle(camera);
-
-    commands.spawn_bundle(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            color: Color::WHITE,
-            // Crank the illuminance way (too) high to make the reference cube clearly visible
-            illuminance: 100000.,
-            shadows_enabled: false,
-            ..Default::default()
-        },
-        ..Default::default()
-    });
-
-    let cube = meshes.add(Mesh::from(Cube { size: 1.0 }));
-    let mat = materials.add(Color::PURPLE.into());
 
     let mut color_gradient1 = Gradient::new();
     color_gradient1.add_key(0.0, Vec4::splat(1.0));
-    color_gradient1.add_key(0.1, Vec4::new(1.0, 1.0, 0.0, 1.0));
-    color_gradient1.add_key(0.4, Vec4::new(1.0, 0.0, 0.0, 1.0));
-    color_gradient1.add_key(1.0, Vec4::splat(0.0));
+    color_gradient1.add_key(0.5, Vec4::new(1.0, 1.0, 0.0, 1.0));
+    color_gradient1.add_key(1.0, Vec4::new(1.0, 0.0, 0.0, 1.0));
+    color_gradient1.add_key(2.0, Vec4::splat(0.0));
 
     let mut size_gradient1 = Gradient::new();
-    size_gradient1.add_key(0.0, Vec2::splat(1.0));
-    size_gradient1.add_key(0.5, Vec2::splat(5.0));
-    size_gradient1.add_key(0.8, Vec2::splat(0.8));
+    size_gradient1.add_key(0.0, Vec2::splat(5.0));
+    size_gradient1.add_key(0.5, Vec2::splat(10.5));
+    size_gradient1.add_key(0.8, Vec2::splat(5.1));
     size_gradient1.add_key(1.0, Vec2::splat(0.0));
 
     let effect1 = effects.add(
@@ -75,12 +58,12 @@ fn setup(
         }
         .init(PositionSphereModifier {
             center: Vec3::ZERO,
-            radius: 2.,
+            radius: 0.1,
             dimension: ShapeDimension::Surface,
-            speed: 6.,
+            speed: 10.0,
         })
         .update(AccelModifier {
-            accel: Vec3::new(0., -3., 0.),
+            accel: Vec3::new(0., -5., 990.),
         })
         .render(ColorOverLifetimeModifier {
             gradient: color_gradient1,
@@ -95,90 +78,7 @@ fn setup(
         .insert(Name::new("emit:rate"))
         .insert_bundle(ParticleEffectBundle {
             effect: ParticleEffect::new(effect1),
-            transform: Transform::from_translation(Vec3::new(-30., 0., 0.)),
+            transform: Transform::from_translation(Vec3::new(0., 0., 100.)),
             ..Default::default()
-        })
-        .with_children(|p| {
-            // Reference cube to visualize the emit origin
-            p.spawn().insert_bundle(PbrBundle {
-                mesh: cube.clone(),
-                material: mat.clone(),
-                ..Default::default()
-            });
-        });
-
-    let mut gradient2 = Gradient::new();
-    gradient2.add_key(0.0, Vec4::new(0.0, 0.0, 1.0, 1.0));
-    gradient2.add_key(1.0, Vec4::splat(0.0));
-
-    let effect2 = effects.add(
-        EffectAsset {
-            name: "emit:once".to_string(),
-            capacity: 32768,
-            spawner: Spawner::new(SpawnMode::once(1000.)),
-            ..Default::default()
-        }
-        .render(ColorOverLifetimeModifier {
-            gradient: gradient2,
-        }),
-    );
-
-    commands
-        .spawn()
-        .insert(Name::new("emit:once"))
-        .insert_bundle(ParticleEffectBundle {
-            effect: ParticleEffect::new(effect2),
-            transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
-            ..Default::default()
-        })
-        .with_children(|p| {
-            // Reference cube to visualize the emit origin
-            p.spawn().insert_bundle(PbrBundle {
-                mesh: cube.clone(),
-                material: mat.clone(),
-                ..Default::default()
-            });
-        });
-
-    let mut gradient3 = Gradient::new();
-    gradient3.add_key(0.0, Vec4::new(0.0, 0.0, 1.0, 1.0));
-    gradient3.add_key(1.0, Vec4::splat(0.0));
-
-    let effect3 = effects.add(
-        EffectAsset {
-            name: "emit:burst".to_string(),
-            capacity: 32768,
-            spawner: Spawner::new(SpawnMode::burst(400., 3.)),
-            ..Default::default()
-        }
-        .init(PositionSphereModifier {
-            center: Vec3::ZERO,
-            radius: 5.,
-            dimension: ShapeDimension::Volume,
-            speed: 2.,
-        })
-        .update(AccelModifier {
-            accel: Vec3::new(0., 5., 0.),
-        })
-        .render(ColorOverLifetimeModifier {
-            gradient: gradient3,
-        }),
-    );
-
-    commands
-        .spawn()
-        .insert(Name::new("emit:burst"))
-        .insert_bundle(ParticleEffectBundle {
-            effect: ParticleEffect::new(effect3),
-            transform: Transform::from_translation(Vec3::new(30., 0., 0.)),
-            ..Default::default()
-        })
-        .with_children(|p| {
-            // Reference cube to visualize the emit origin
-            p.spawn().insert_bundle(PbrBundle {
-                mesh: cube.clone(),
-                material: mat.clone(),
-                ..Default::default()
-            });
         });
 }

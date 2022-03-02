@@ -1,5 +1,5 @@
 use bevy::{
-    core_pipeline::Transparent3d,
+    core_pipeline::Transparent2d,
     prelude::*,
     render::{
         render_graph::RenderGraph, render_phase::DrawFunctions,
@@ -18,7 +18,7 @@ use crate::{
     },
 };
 
-pub mod draw_3d_graph {
+pub mod draw_2d_graph {
     pub mod node {
         /// Label for the particle update compute node.
         pub const PARTICLE_UPDATE_PASS: &str = "particle_update_pass";
@@ -90,7 +90,7 @@ impl Plugin for HanabiPlugin {
             let draw_particles = DrawEffects::new(&mut render_app.world);
             render_app
                 .world
-                .get_resource::<DrawFunctions<Transparent3d>>()
+                .get_resource::<DrawFunctions<Transparent2d>>()
                 .unwrap()
                 .write()
                 .add(draw_particles);
@@ -102,21 +102,21 @@ impl Plugin for HanabiPlugin {
         // particles to render them.
         let update_node = ParticleUpdateNode::new(&mut render_app.world);
         let mut graph = render_app.world.get_resource_mut::<RenderGraph>().unwrap();
-        let draw_3d_graph = graph
-            .get_sub_graph_mut(bevy::core_pipeline::draw_3d_graph::NAME)
+        let draw_2d_graph = graph
+            .get_sub_graph_mut(bevy::core_pipeline::draw_2d_graph::NAME)
             .unwrap();
-        draw_3d_graph.add_node(draw_3d_graph::node::PARTICLE_UPDATE_PASS, update_node);
-        draw_3d_graph
+        draw_2d_graph.add_node(draw_2d_graph::node::PARTICLE_UPDATE_PASS, update_node);
+        draw_2d_graph
             .add_node_edge(
-                draw_3d_graph::node::PARTICLE_UPDATE_PASS,
+                draw_2d_graph::node::PARTICLE_UPDATE_PASS,
                 bevy::core_pipeline::draw_3d_graph::node::MAIN_PASS,
             )
             .unwrap();
-        draw_3d_graph
+        draw_2d_graph
             .add_slot_edge(
-                draw_3d_graph.input_node().unwrap().id,
+                draw_2d_graph.input_node().unwrap().id,
                 bevy::core_pipeline::draw_3d_graph::input::VIEW_ENTITY,
-                draw_3d_graph::node::PARTICLE_UPDATE_PASS,
+                draw_2d_graph::node::PARTICLE_UPDATE_PASS,
                 ParticleUpdateNode::IN_VIEW,
             )
             .unwrap();

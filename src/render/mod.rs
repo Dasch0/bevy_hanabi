@@ -3,7 +3,7 @@
 use bevy::{
     asset::{AssetEvent, Assets, Handle, HandleId, HandleUntyped},
     core::{cast_slice, FloatOrd, Pod, Time, Zeroable},
-    core_pipeline::Transparent3d,
+    core_pipeline::Transparent2d,
     ecs::{
         prelude::*,
         system::{lifetimeless::*, SystemState},
@@ -538,13 +538,14 @@ impl SpecializedPipeline for ParticlesRenderPipeline {
                 topology: PrimitiveTopology::TriangleList,
                 strip_index_format: None,
             },
-            depth_stencil: Some(DepthStencilState {
-                format: TextureFormat::Depth32Float,
-                depth_write_enabled: false,
-                depth_compare: CompareFunction::Always,
-                stencil: StencilState::default(),
-                bias: DepthBiasState::default(),
-            }),
+            depth_stencil: None,
+            //depth_stencil: Some(DepthStencilState {
+            //    format: TextureFormat::Depth32Float,
+            //    depth_write_enabled: false,
+            //    depth_compare: CompareFunction::Always,
+            //    stencil: StencilState::default(),
+            //    bias: DepthBiasState::default(),
+            //}),
             multisample: MultisampleState {
                 count: 4, // TODO: Res<Msaa>.samples
                 mask: !0,
@@ -1170,7 +1171,7 @@ pub struct EffectBindGroups {
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn queue_effects(
-    draw_functions: Res<DrawFunctions<Transparent3d>>,
+    draw_functions: Res<DrawFunctions<Transparent2d>>,
     render_device: Res<RenderDevice>,
     mut effects_meta: ResMut<EffectsMeta>,
     view_uniforms: Res<ViewUniforms>,
@@ -1183,7 +1184,7 @@ pub(crate) fn queue_effects(
     mut effect_bind_groups: ResMut<EffectBindGroups>,
     gpu_images: Res<RenderAssets<Image>>,
     mut effect_batches: Query<(Entity, &mut EffectBatch)>,
-    mut views: Query<&mut RenderPhase<Transparent3d>>,
+    mut views: Query<&mut RenderPhase<Transparent2d>>,
     events: Res<EffectAssetEvents>,
 ) {
     trace!("queue_effects");
@@ -1382,11 +1383,12 @@ pub(crate) fn queue_effects(
 
             // Add a draw pass for the effect batch
             trace!("Add Transparent3d for batch on entity {:?}: buffer_index={} spawner_base={} slice={:?} handle={:?}", entity, batch.buffer_index, batch.spawner_base, batch.slice, batch.handle);
-            transparent_phase.add(Transparent3d {
+            transparent_phase.add(Transparent2d {
                 draw_function: draw_effects_function,
                 pipeline: render_pipeline_id,
                 entity,
-                distance: 0.0, // TODO ??????
+                batch_range: None,
+                sort_key: FloatOrd(0.0),
             });
         }
         // for (_buffer_index, _buffer) in effects_meta.effect_cache.buffers().iter().enumerate() {
@@ -1455,13 +1457,13 @@ pub struct ExtractedEffectEntities {
     pub entities: Vec<Entity>,
 }
 
-impl Draw<Transparent3d> for DrawEffects {
+impl Draw<Transparent2d> for DrawEffects {
     fn draw<'w>(
         &mut self,
         world: &'w World,
         pass: &mut TrackedRenderPass<'w>,
         view: Entity,
-        item: &Transparent3d,
+        item: &Transparent2d,
     ) {
         trace!("Draw<Transparent3d>: view={:?}", view);
         let (
